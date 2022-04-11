@@ -2,6 +2,7 @@ import WS from 'ws';
 import { config } from 'dotenv';
 import { exec } from 'child_process';
 import { hostname } from 'os';
+import wrap from 'word-wrap';
 
 config();
 
@@ -95,10 +96,15 @@ client.on('open', () => {
         })
       );
     } else if (payload.op === 'MESSAGE') {
-      console.log('Message received:', payload.d);
-      exec(
-        'kdialog --msgbox "The Hivemind Says: " ' + JSON.stringify(payload.d)
+      const message = JSON.stringify(
+        wrap(payload.d, {
+          width: 50,
+          newline: '\n ',
+          cut: true
+        })
       );
+      console.log('Message received:', message);
+      exec(`kdialog --msgbox ${message}`);
     } else {
       console.log('Unknown payload type:', payload.op);
     }
