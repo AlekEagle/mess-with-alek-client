@@ -96,7 +96,7 @@ client.on('open', () => {
       );
     } else if (payload.op === 'MESSAGE') {
       console.log('Message received:', payload.d);
-      exec('kdialog --msgbox "' + payload.d + '"');
+      exec('kdialog --msgbox "' + JSON.stringify(payload.d) + '"');
     } else {
       console.log('Unknown payload type:', payload.op);
     }
