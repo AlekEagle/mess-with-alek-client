@@ -100,7 +100,8 @@ client.on('open', () => {
         wrap(payload.d, {
           width: 50,
           newline: '\n ',
-          cut: true
+          cut: true,
+          indent: ''
         })
       );
       console.log('Message received:', message);
