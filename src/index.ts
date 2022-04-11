@@ -55,7 +55,7 @@ interface GenericPayload {
 }
 
 const client = new WS(
-  process.env.DEBUG
+  process.env.DEBUG === 'true'
     ? 'ws://localhost:3000/client'
     : 'wss://dumb-alek.alekeagle.com/client'
 );
@@ -96,7 +96,9 @@ client.on('open', () => {
       );
     } else if (payload.op === 'MESSAGE') {
       console.log('Message received:', payload.d);
-      exec('kdialog --msgbox "' + JSON.stringify(payload.d) + '"');
+      exec(
+        'kdialog --msgbox "The Hivemind Says: " ' + JSON.stringify(payload.d)
+      );
     } else {
       console.log('Unknown payload type:', payload.op);
     }
