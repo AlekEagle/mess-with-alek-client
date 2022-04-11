@@ -100,7 +100,6 @@ client.on('open', () => {
         wrap(payload.d, {
           width: 50,
           newline: '\n ',
-          cut: true,
           indent: ''
         })
       );
