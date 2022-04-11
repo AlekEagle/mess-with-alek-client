@@ -99,8 +99,9 @@ client.on('open', () => {
       const message = JSON.stringify(
         wrap(payload.d, {
           width: 50,
-          newline: '\n ',
-          indent: ''
+          newline: '\n',
+          indent: '',
+          trim: true
         })
       );
       console.log('Message received:', message);
