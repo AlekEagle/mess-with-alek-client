@@ -105,7 +105,9 @@ client.on('open', () => {
         })
       );
       console.log('Message received:', message);
-      exec(`kdialog --msgbox ${message}`);
+      exec(
+        `kdialog --title "Hivemind Communication Tunnel" --msgbox ${message}`
+      );
     } else {
       console.log('Unknown payload type:', payload.op);
     }
