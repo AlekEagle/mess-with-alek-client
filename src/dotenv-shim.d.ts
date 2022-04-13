@@ -5,6 +5,7 @@ declare global {
     interface ProcessEnv {
       readonly TOKEN: string;
       readonly DEBUG: string;
+      readonly DEBUG_TOKEN: string;
     }
   }
 }
