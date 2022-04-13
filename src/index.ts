@@ -57,7 +57,8 @@ interface GenericPayload {
 
 let heartbeatTimeout: NodeJS.Timeout;
 
-let client: WS;
+let client: WS,
+  errorCount = 0;
 
 function createClient() {
   client = new WS(
@@ -65,6 +66,16 @@ function createClient() {
       ? "ws://localhost:3000/client"
       : "wss://dumb-alek.alekeagle.com/client"
   );
+  client.on("error", (err) => {
+    if (++errorCount > 10) {
+      console.error("Too many errors, exiting");
+      process.exit(1);
+    }
+    console.error(err);
+    client.terminate();
+    client = null;
+    setTimeout(createClient, 1000);
+  });
   client.on("open", () => {
     if (process.env.DEBUG === "true") console.log("Connected");
     client.on("message", (data: string) => {
