@@ -1,8 +1,8 @@
-import WS from 'ws';
-import { config } from 'dotenv';
-import { exec } from 'child_process';
-import { hostname } from 'os';
-import wrap from 'word-wrap';
+import WS from "ws";
+import { config } from "dotenv";
+import { exec } from "child_process";
+import { hostname } from "os";
+import wrap from "word-wrap";
 
 config();
 
@@ -29,14 +29,14 @@ enum ServerCloseCodes {
   InvalidToken = 4001,
   InvalidPayload = 4002,
   MissedHeartbeat = 4003,
-  AlreadyIdentified = 4004
+  AlreadyIdentified = 4004,
 }
 
 enum ClientCloseCodes {
   OK = 1000,
   ClientError = 4000,
   InvalidPayload = 4001,
-  MissedHeartbeat = 4002
+  MissedHeartbeat = 4002,
 }
 
 interface ClientPayloads {
@@ -63,84 +63,87 @@ let client: WS,
 
 function createClient() {
   client = new WS(
-    process.env.DEBUG === 'true'
-      ? 'ws://localhost:3000/client'
-      : 'wss://dumb-alek.alekeagle.com/client'
+    process.env.DEBUG === "true"
+      ? "ws://localhost:3000/client"
+      : "wss://dumb-alek.alekeagle.com/client"
   );
-  client.on('error', err => {
+  client.on("error", (err) => {
+    console.error(err);
+    client = null;
     if (++errorCount > 10) {
-      console.error('Too many errors, exiting');
+      console.error("Too many errors, exiting");
       process.exit(1);
     }
-    console.error(err);
-    client.terminate();
-    client = null;
     setTimeout(createClient, 1000);
   });
-  client.on('open', () => {
-    if (process.env.DEBUG === 'true') console.log('Connected');
-    client.on('message', (data: string) => {
-      if (process.env.DEBUG === 'true') console.log(data.toString());
+  client.on("open", () => {
+    if (process.env.DEBUG === "true") console.log("Connected");
+    client.on("message", (data: string) => {
+      if (process.env.DEBUG === "true") console.log(data.toString());
       const payload: GenericPayload = JSON.parse(data.toString());
-      if (payload.op === 'IDENTIFY') {
+      if (payload.op === "IDENTIFY") {
         heartbeatInterval = payload.d.heartbeatInterval;
         client.send(
           JSON.stringify({
-            op: 'IDENTITY',
+            op: "IDENTITY",
             d: {
               token:
-                process.env.DEBUG === 'true'
+                process.env.DEBUG === "true"
                   ? process.env.DEBUG_TOKEN
                   : process.env.TOKEN,
-              name: hostname()
-            }
+              name: hostname(),
+            },
           })
         );
-      } else if (payload.op === 'HEARTBEAT') {
+      } else if (payload.op === "HEARTBEAT") {
         clearTimeout(heartbeatTimeout);
         client.send(
           JSON.stringify({
-            op: 'HEARTBEAT',
+            op: "HEARTBEAT",
             d: {
-              timestamp: Date.now()
-            }
+              timestamp: Date.now(),
+            },
           })
         );
         heartbeatTimeout = setTimeout(() => {
           client.close(ClientCloseCodes.MissedHeartbeat);
         }, heartbeatInterval);
-        if (process.env.DEBUG === 'true') console.log('Heartbeat sent');
-      } else if (payload.op === 'IDENTIFIED') {
+        if (process.env.DEBUG === "true") console.log("Heartbeat sent");
+      } else if (payload.op === "IDENTIFIED") {
         client.send(
           JSON.stringify({
-            op: 'HEARTBEAT',
+            op: "HEARTBEAT",
             d: {
-              timestamp: Date.now()
-            }
+              timestamp: Date.now(),
+            },
           })
         );
-      } else if (payload.op === 'MESSAGE') {
+      } else if (payload.op === "MESSAGE") {
         const message = JSON.stringify(
           wrap(payload.d, {
             width: 50,
-            newline: '\n',
-            indent: '',
-            trim: true
+            newline: "\n",
+            indent: "",
+            trim: true,
           })
         );
-        console.log('Message received:', message);
+        console.log("Message received:", message);
         exec(
           `kdialog --title "Hivemind Communication Tunnel" --msgbox ${message}`
         );
       } else {
-        console.log('Unknown payload type:', payload.op);
+        console.log("Unknown payload type:", payload.op);
       }
     });
   });
 
-  client.on('close', (code: number) => {
-    console.log('Disconnected with code:', code);
-    console.log('Attempting to reconnect...');
+  client.on("close", (code: number) => {
+    console.log("Disconnected with code:", code);
+    console.log("Attempting to reconnect...");
+    if (++errorCount > 10) {
+      console.error("Too many errors, exiting");
+      process.exit(1);
+    }
     setTimeout(createClient, 1000);
   });
 }
