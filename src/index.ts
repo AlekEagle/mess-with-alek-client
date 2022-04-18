@@ -1,10 +1,12 @@
 import WS from "ws";
 import { config } from "dotenv";
-import { exec } from "child_process";
+import { spawn } from "child_process";
 import { hostname } from "os";
-import wrap from "word-wrap";
 
 config();
+
+// duration in milliseconds where we will redisplay the popup if closed too soon
+const popupTimeout = 5000;
 
 interface ServerPayloads {
   IDENTIFY: {
@@ -60,6 +62,27 @@ let heartbeatInterval: number;
 
 let client: WS,
   errorCount = 0;
+
+function displayPopup(message: string): Promise<void> {
+  return new Promise((resolve) => {
+    const popup = spawn("zenity", [
+        "--info",
+        "--text",
+        message,
+        "--title",
+        "Hivemind Communication Tunnel",
+      ]),
+      now = Date.now();
+
+    popup.on("close", () => {
+      if (Date.now() - now > popupTimeout) {
+        resolve();
+      } else {
+        displayPopup(message).then(resolve);
+      }
+    });
+  });
+}
 
 function createClient() {
   client = new WS(
@@ -119,18 +142,9 @@ function createClient() {
           })
         );
       } else if (payload.op === "MESSAGE") {
-        const message = JSON.stringify(
-          wrap(payload.d, {
-            width: 50,
-            newline: "\n",
-            indent: "",
-            trim: true,
-          })
-        );
-        console.log("Message received:", message);
-        exec(
-          `kdialog --title "Hivemind Communication Tunnel" --msgbox ${message}`
-        );
+        const message = JSON.stringify((payload.d as string).trim());
+        if (message.length > 0) displayPopup(message);
+        else console.log("Empty message lol");
       } else {
         console.log("Unknown payload type:", payload.op);
       }
