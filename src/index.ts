@@ -2,17 +2,29 @@ import WS from 'ws';
 import { config } from 'dotenv';
 import { spawn } from 'child_process';
 import { hostname } from 'os';
+import notifier from 'node-notifier';
+import SysTray from 'systray';
 
 config();
 
 // duration in milliseconds where we will redisplay the popup if closed too soon
 const popupTimeout = 5000;
 
+// Create a new system tray icon.
+const tray = new SysTray({
+  menu: {
+    title: 'Hivemind Communication Tunnel',
+    tooltip: 'Hivemind Communication Tunnel',
+    items: [],
+    icon: null,
+  },
+});
+
 enum ClientCloseCodes {
   OK = 1000,
   ClientError = 4000,
   InvalidPayload = 4001,
-  MissedHeartbeat = 4002
+  MissedHeartbeat = 4002,
 }
 
 interface ClientPayloads {
@@ -38,17 +50,11 @@ let client: WS,
   errorCount = 0;
 
 function displayPopup(message: string): Promise<void> {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     const popup = spawn(
-        'zenity',
-        [
-          '--info',
-          '--text',
-          message,
-          '--title',
-          'Hivemind Communication Tunnel'
-        ],
-        { shell: false }
+        'kdialog',
+        ['--msgbox', message, '--title', 'Hivemind Communication Tunnel'],
+        { shell: false },
       ),
       now = Date.now();
 
@@ -66,9 +72,9 @@ function createClient() {
   client = new WS(
     process.env.DEBUG === 'true'
       ? 'ws://localhost:3000/client'
-      : 'wss://dumb-alek.alekeagle.com/client'
+      : 'wss://dumb-alek.alekeagle.com/client',
   );
-  client.on('error', err => {
+  client.on('error', (err) => {
     console.error(err);
     client = null;
     if (++errorCount > 10) {
@@ -92,9 +98,9 @@ function createClient() {
                 process.env.DEBUG === 'true'
                   ? process.env.DEBUG_TOKEN
                   : process.env.TOKEN,
-              name: hostname()
-            }
-          })
+              name: hostname(),
+            },
+          }),
         );
       } else if (payload.op === 'HEARTBEAT') {
         clearTimeout(heartbeatTimeout);
@@ -102,9 +108,9 @@ function createClient() {
           JSON.stringify({
             op: 'HEARTBEAT',
             d: {
-              timestamp: Date.now()
-            }
-          })
+              timestamp: Date.now(),
+            },
+          }),
         );
         heartbeatTimeout = setTimeout(() => {
           client.close(ClientCloseCodes.MissedHeartbeat);
@@ -115,9 +121,9 @@ function createClient() {
           JSON.stringify({
             op: 'HEARTBEAT',
             d: {
-              timestamp: Date.now()
-            }
-          })
+              timestamp: Date.now(),
+            },
+          }),
         );
       } else if (payload.op === 'MESSAGE') {
         const message = (payload.d as string).trim();

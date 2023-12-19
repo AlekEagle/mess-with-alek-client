@@ -3,11 +3,10 @@
     "outDir": "./dist/",
     "sourceMap": true,
     "noImplicitAny": true,
-    "module": "commonjs",
+    "module": "ESNext",
     "target": "es2020",
     "rootDir": "./src/",
-    "resolveJsonModule": true,
-    "typeRoots": ["./src/types", "node_modules/@types"],
+    "moduleResolution": "node",
     "alwaysStrict": true,
     "esModuleInterop": true
   },
