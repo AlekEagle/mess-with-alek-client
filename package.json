@@ -13,9 +13,8 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^16.0.3",
-    "node-fetch": "^3.3.0",
     "node-notifier": "^10.0.1",
-    "systray": "^1.0.5",
+    "node-systray-v2": "github:Edgar-P-yan/node-systray-v2",
     "word-wrap": "^1.2.3",
     "ws": "^8.12.0"
   },

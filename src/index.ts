@@ -3,7 +3,8 @@ import { config } from 'dotenv';
 import { spawn } from 'child_process';
 import { hostname } from 'os';
 import notifier from 'node-notifier';
-import SysTray from 'systray';
+import SysTray from 'node-systray-v2';
+import { readFile } from 'fs/promises';
 
 config();
 
@@ -15,9 +16,26 @@ const tray = new SysTray({
   menu: {
     title: 'Hivemind Communication Tunnel',
     tooltip: 'Hivemind Communication Tunnel',
-    items: [],
-    icon: null,
+    items: [
+      {
+        title: 'Exit',
+        tooltip: 'Exit',
+        checked: false,
+        enabled: true,
+      },
+    ],
+    icon: await readFile('./icon.png', 'base64'),
   },
+});
+
+tray.onClick((action) => {
+  switch (action.item.title) {
+    case 'Exit':
+      if (client) client.close(ClientCloseCodes.OK);
+      process.exit(0);
+    default:
+      console.log('Unknown action:', action.item.title);
+  }
 });
 
 enum ClientCloseCodes {
@@ -84,6 +102,10 @@ function createClient() {
     setTimeout(createClient, 1000);
   });
   client.on('open', () => {
+    notifier.notify({
+      title: 'Hivemind Communication Tunnel',
+      message: 'Connected',
+    });
     if (process.env.DEBUG === 'true') console.log('Connected');
     client.on('message', (data: string) => {
       if (process.env.DEBUG === 'true') console.log(data.toString());
@@ -136,10 +158,18 @@ function createClient() {
   });
 
   client.on('close', (code: number) => {
+    notifier.notify({
+      title: 'Hivemind Communication Tunnel',
+      message: 'Disconnected',
+    });
     console.log('Disconnected with code:', code);
     console.log('Attempting to reconnect...');
     if (++errorCount > 10) {
       console.error('Too many errors, exiting');
+      notifier.notify({
+        title: 'Hivemind Communication Tunnel',
+        message: 'Too many errors, exiting',
+      });
       process.exit(1);
     }
     setTimeout(createClient, 1000);
